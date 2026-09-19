@@ -87,12 +87,16 @@ public class LoginServlet extends HttpServlet {
                     + "Thank you,\n"
                     + "Student Matcher Team";
 
-                EmailService.sendEmail(
-                    rs.getString("email"),
-                    emailSubject,
-                    emailMessage
-                );
-
+                try {
+    EmailService.sendEmail(
+        rs.getString("email"),
+        emailSubject,
+        emailMessage
+    );
+} catch (Exception emailError) {
+    System.out.println("Login email failed: "
+        + emailError.getMessage());
+}
 
                 // =========================
                 // ONE MAIN PAGE
