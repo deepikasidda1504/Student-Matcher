@@ -1,14 +1,9 @@
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+import java.io.*;
+import java.sql.*;
 
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 
 @WebServlet("/register")
 public class RegistrationServlet extends HttpServlet {
@@ -17,112 +12,136 @@ public class RegistrationServlet extends HttpServlet {
                           HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Receive data from front.html
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+
         String name = request.getParameter("name");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-        String college_name = request.getParameter("college_name");
-
-        // MySQL connection details
-        String url = "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED";
-String user = "avnadmin";
-String dbPassword = System.getenv("DB_PASSWORD");
-        // SQL query
-        String sql = "INSERT INTO students "
-                   + "(name, email, password, college_name) "
-                   + "VALUES (?, ?, ?, ?)";
-
-        response.setContentType("text/html");
-
-        PrintWriter out = response.getWriter();
+        String collegeName = request.getParameter("college_name");
 
         try {
 
-            // Load MySQL JDBC driver
+            // Load MySQL driver
             Class.forName("com.mysql.cj.jdbc.Driver");
 
-            // Connect to MySQL
-            Connection con = DriverManager.getConnection(
+            // Aiven database
+            String url =
+                "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED";
+
+            String user = "avnadmin";
+
+            String dbPassword = System.getenv("DB_PASSWORD");
+
+            Connection con =
+                DriverManager.getConnection(
                     url,
                     user,
                     dbPassword
-            );
+                );
 
-            // Prepare SQL query
-            PreparedStatement ps = con.prepareStatement(sql);
+            // Insert student
+            String sql =
+                "INSERT INTO students "
+              + "(name, email, password, college_name) "
+              + "VALUES (?, ?, ?, ?)";
 
-            // Put values into ?
+            PreparedStatement ps =
+                con.prepareStatement(sql);
+
             ps.setString(1, name);
             ps.setString(2, email);
             ps.setString(3, password);
-            ps.setString(4, college_name);
+            ps.setString(4, collegeName);
 
-            // Execute INSERT query
             ps.executeUpdate();
 
-            // ==============================
-            // SEND REGISTRATION EMAIL
-            // ==============================
+            ps.close();
+            con.close();
 
-            String subject =
-                    "Student Matcher - Registration Successful";
-
-            String message =
-                    "Hello " + name + ",\n\n"
-                  + "Your registration in Student Matcher "
-                  + "was successful.\n\n"
-                  + "Welcome to Student Matcher!\n"
-                  + "You can now login and add your skills.\n\n"
-                  + "Thank you,\n"
-                  + "Student Matcher Team";
-
-            EmailService.sendEmail(
-                    email,
-                    subject,
-                    message
-            );
-
-            // ==============================
-            // DISPLAY SUCCESS MESSAGE
-            // ==============================
+            // ------------------------------------------------
+            // SHOW SUCCESS IMMEDIATELY
+            // ------------------------------------------------
 
             out.println("<html>");
+            out.println("<head>");
+            out.println("<title>Registration Successful</title>");
+            out.println("</head>");
+
             out.println("<body>");
 
             out.println("<h1>Registration Successful!</h1>");
 
-            out.println("<p>Welcome "
+            out.println("<p>Welcome, "
                     + name
-                    + "</p>");
+                    + ".</p>");
 
-            out.println("<p>Thank you for registering.</p>");
+            out.println("<p>Your account has been created successfully.</p>");
 
-            out.println("<p>"
-                    + "A confirmation email has been sent to "
-                    + email
-                    + "</p>");
-
-            out.println("<a href='login.html'>"
-                    + "Go to Login"
-                    + "</a>");
+            out.println("<a href='login.html'>Go to Login</a>");
 
             out.println("</body>");
             out.println("</html>");
 
-            // Close resources
-            ps.close();
-            con.close();
+            // ------------------------------------------------
+            // SEND EMAIL IN BACKGROUND
+            // ------------------------------------------------
+
+            final String registeredEmail = email;
+            final String registeredName = name;
+
+            new Thread(new Runnable() {
+
+                public void run() {
+
+                    try {
+
+                        String subject =
+                            "Student Matcher Registration Successful";
+
+                        String message =
+                            "Hello "
+                            + registeredName
+                            + ",\n\n"
+                            + "Your Student Matcher account has been "
+                            + "created successfully.\n\n"
+                            + "You can now login and use Student Matcher.\n\n"
+                            + "Thank you.";
+
+                        EmailService.sendEmail(
+                            registeredEmail,
+                            subject,
+                            message
+                        );
+
+                        System.out.println(
+                            "Registration email sent to "
+                            + registeredEmail
+                        );
+
+                    } catch (Exception emailError) {
+
+                        System.out.println(
+                            "Registration email failed: "
+                            + emailError.getMessage()
+                        );
+                    }
+                }
+
+            }).start();
 
         } catch (Exception e) {
 
             out.println("<html>");
             out.println("<body>");
 
-            out.println("<h1>Registration Failed</h1>");
+            out.println("<h2>Registration Failed</h2>");
 
             out.println("<p>Error: "
                     + e.getMessage()
                     + "</p>");
+
+            out.println("<a href='registration.html'>Try Again</a>");
 
             out.println("</body>");
             out.println("</html>");
