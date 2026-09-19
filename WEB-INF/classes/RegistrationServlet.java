@@ -24,10 +24,9 @@ public class RegistrationServlet extends HttpServlet {
         String college_name = request.getParameter("college_name");
 
         // MySQL connection details
-        String url = "jdbc:mysql://127.0.0.1:3306/deepu";
-        String user = "root";
-        String dbPassword = System.getenv("DB_PASSWORD");
-
+        String url = "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED";
+String user = "avnadmin";
+String dbPassword = System.getenv("DB_PASSWORD");
         // SQL query
         String sql = "INSERT INTO students "
                    + "(name, email, password, college_name) "

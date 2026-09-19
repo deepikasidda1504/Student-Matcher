@@ -38,13 +38,11 @@ public class AddSkillServlet extends HttpServlet {
 
             Class.forName("com.mysql.cj.jdbc.Driver");
 
-            Connection con =
-                DriverManager.getConnection(
-                    "jdbc:mysql://127.0.0.1:3306/deepu",
-                    "root",
-                    System.getenv("DB_PASSWord");
-                );
-
+            Connection con = DriverManager.getConnection(
+    "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED",
+    "avnadmin",
+    System.getenv("DB_PASSWORD")
+);
             String sql =
                 "INSERT INTO skills (student_id, skill_name) VALUES (?, ?)";
 

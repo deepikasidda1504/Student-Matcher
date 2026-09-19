@@ -23,8 +23,8 @@ public class LoginServlet extends HttpServlet {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             Connection con = DriverManager.getConnection(
-                "jdbc:mysql://127.0.0.1:3306/deepu",
-                "root",
+               "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED",
+"avnadmin",
                System.getenv("DB_PASSWORD")
             );
 

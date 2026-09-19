@@ -14,7 +14,7 @@ public class EmailService {
         final String fromEmail = "sdphanisri@gmail.com";
         final String appPassword =System.getenv( "MAIL_APP_PASSWORD");
              if(appPassword==null||appPassword.trim().isEmpty()){
-                     throws new RuntimeException("MAIL_APP_PASSWORD is notconfigured");
+                     throw new RuntimeException("MAIL_APP_PASSWORD is not configured");
 }
 
 
