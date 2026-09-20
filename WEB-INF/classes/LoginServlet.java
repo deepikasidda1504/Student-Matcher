@@ -23,15 +23,16 @@ public class LoginServlet extends HttpServlet {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             Connection con = DriverManager.getConnection(
-               "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED",
-"avnadmin",
-               System.getenv("DB_PASSWORD")
+                "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED",
+                "avnadmin",
+                System.getenv("DB_PASSWORD")
             );
 
             String sql =
                 "SELECT * FROM students WHERE email=? AND password=?";
 
-            PreparedStatement ps = con.prepareStatement(sql);
+            PreparedStatement ps =
+                con.prepareStatement(sql);
 
             ps.setString(1, email);
             ps.setString(2, password);
@@ -46,40 +47,48 @@ public class LoginServlet extends HttpServlet {
 
                 HttpSession session = request.getSession();
 
-                // Store student ID
+                int studentId =
+                    rs.getInt("student_id");
+
+                String studentName =
+                    rs.getString("name");
+
+                String studentEmail =
+                    rs.getString("email");
+
+                String collegeName =
+                    rs.getString("college_name");
+
                 session.setAttribute(
                     "student_id",
-                    rs.getInt("student_id")
+                    studentId
                 );
 
-                // Store student name
                 session.setAttribute(
                     "name",
-                    rs.getString("name")
+                    studentName
                 );
 
-                // Store email
                 session.setAttribute(
                     "email",
-                    rs.getString("email")
+                    studentEmail
                 );
 
-                // Store college
                 session.setAttribute(
                     "college_name",
-                    rs.getString("college_name")
+                    collegeName
                 );
 
 
                 // =========================
-                // SEND LOGIN EMAIL
+                // LOGIN EMAIL DETAILS
                 // =========================
 
                 String emailSubject =
                     "Student Matcher - Login Successful";
 
                 String emailMessage =
-                    "Hello " + rs.getString("name") + ",\n\n"
+                    "Hello " + studentName + ",\n\n"
                     + "You have successfully logged in to "
                     + "Student Matcher.\n\n"
                     + "If this login was not made by you, "
@@ -87,48 +96,75 @@ public class LoginServlet extends HttpServlet {
                     + "Thank you,\n"
                     + "Student Matcher Team";
 
-                final String loginEmail = rs.getString("email");
-final String finalSubject = emailSubject;
-final String finalMessage = emailMessage;
 
-new Thread(new Runnable() {
-    public void run() {
-        try {
-            EmailService.sendEmail(
-                loginEmail,
-                finalSubject,
-                finalMessage
-            );
-        } catch (Exception emailError) {
-            System.out.println(
-                "Login email failed: "
-                + emailError.getMessage()
-            );
-        }
-    }
-}).start();
                 // =========================
-                // ONE MAIN PAGE
+                // MAIN PAGE
                 // =========================
 
                 out.println("<!DOCTYPE html>");
                 out.println("<html>");
 
                 out.println("<head>");
-                out.println("<title>Student Matcher</title>");
+
+                out.println(
+                    "<title>Student Matcher</title>"
+                );
+
+                // EmailJS Browser SDK
+                out.println(
+                    "<script src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'></script>"
+                );
+
                 out.println("</head>");
 
                 out.println("<body>");
 
-                out.println("<h1>Student Matcher</h1>");
+                out.println(
+                    "<h1>Student Matcher</h1>"
+                );
 
                 out.println(
                     "<h2>Welcome "
-                    + rs.getString("name")
+                    + studentName
                     + "!</h2>"
                 );
 
                 out.println("<hr>");
+
+
+                // =========================
+                // SEND EMAIL USING EMAILJS
+                // =========================
+
+                out.println("<script>");
+
+                out.println(
+                    "emailjs.init({"
+                    + "publicKey: 'dCGkD7eJKsjTOzVmt'"
+                    + "});"
+                );
+
+                out.println(
+                    "emailjs.send("
+                    + "'service_5ae6909',"
+                    + "'template_400i7hb',"
+                    + "{"
+                    + "to_email: '" + escapeJavaScript(studentEmail) + "',"
+                    + "subject: '" + escapeJavaScript(emailSubject) + "',"
+                    + "message: '" + escapeJavaScript(emailMessage) + "',"
+                    + "name: '" + escapeJavaScript(studentName) + "'"
+                    + "}"
+                    + ").then("
+                    + "function(response) {"
+                    + "console.log('Login email sent successfully');"
+                    + "},"
+                    + "function(error) {"
+                    + "console.log('Login email failed:', error);"
+                    + "}"
+                    + ");"
+                );
+
+                out.println("</script>");
 
 
                 // =========================
@@ -139,19 +175,19 @@ new Thread(new Runnable() {
 
                 out.println(
                     "<p><b>Name:</b> "
-                    + rs.getString("name")
+                    + studentName
                     + "</p>"
                 );
 
                 out.println(
                     "<p><b>Email:</b> "
-                    + rs.getString("email")
+                    + studentEmail
                     + "</p>"
                 );
 
                 out.println(
                     "<p><b>College:</b> "
-                    + rs.getString("college_name")
+                    + collegeName
                     + "</p>"
                 );
 
@@ -209,7 +245,9 @@ new Thread(new Runnable() {
 
             } else {
 
-                out.println("<h1>Invalid Email or Password</h1>");
+                out.println(
+                    "<h1>Invalid Email or Password</h1>"
+                );
 
                 out.println(
                     "<a href='login.html'>Try Again</a>"
@@ -228,5 +266,24 @@ new Thread(new Runnable() {
                 "<p>" + e.getMessage() + "</p>"
             );
         }
+    }
+
+
+    // =========================
+    // JAVASCRIPT ESCAPE
+    // =========================
+
+    private String escapeJavaScript(String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\"", "\\\"")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n");
     }
 }

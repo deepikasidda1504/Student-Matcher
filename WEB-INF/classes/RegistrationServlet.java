@@ -22,16 +22,15 @@ public class RegistrationServlet extends HttpServlet {
 
         try {
 
-            // Load MySQL driver
             Class.forName("com.mysql.cj.jdbc.Driver");
 
-            // Aiven database
             String url =
                 "jdbc:mysql://student-matcher-db-deepikasidda1504-511b.k.aivencloud.com:23378/defaultdb?sslMode=REQUIRED";
 
             String user = "avnadmin";
 
-            String dbPassword = System.getenv("DB_PASSWORD");
+            String dbPassword =
+                System.getenv("DB_PASSWORD");
 
             Connection con =
                 DriverManager.getConnection(
@@ -40,7 +39,6 @@ public class RegistrationServlet extends HttpServlet {
                     dbPassword
                 );
 
-            // Insert student
             String sql =
                 "INSERT INTO students "
               + "(name, email, password, college_name) "
@@ -59,76 +57,95 @@ public class RegistrationServlet extends HttpServlet {
             ps.close();
             con.close();
 
-            // ------------------------------------------------
-            // SHOW SUCCESS IMMEDIATELY
-            // ------------------------------------------------
 
+            // ==========================================
+            // REGISTRATION SUCCESS PAGE
+            // ==========================================
+
+            out.println("<!DOCTYPE html>");
             out.println("<html>");
+
             out.println("<head>");
+
             out.println("<title>Registration Successful</title>");
+
+            // EmailJS Browser SDK
+            out.println(
+                "<script src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'></script>"
+            );
+
             out.println("</head>");
 
             out.println("<body>");
 
-            out.println("<h1>Registration Successful!</h1>");
+            out.println(
+                "<h1>Registration Successful!</h1>"
+            );
 
-            out.println("<p>Welcome, "
-                    + name
-                    + ".</p>");
+            out.println(
+                "<p>Welcome, "
+                + escapeHtml(name)
+                + ".</p>"
+            );
 
-            out.println("<p>Your account has been created successfully.</p>");
+            out.println(
+                "<p>Your account has been created successfully.</p>"
+            );
 
-            out.println("<a href='login.html'>Go to Login</a>");
+
+            // ==========================================
+            // SEND REGISTRATION EMAIL USING EMAILJS
+            // ==========================================
+
+            String emailSubject =
+                "Registration Successful";
+
+            String emailMessage =
+                "Your Student Matcher account has been "
+                + "created successfully.\n\n"
+                + "You can now login and use Student Matcher.\n\n"
+                + "Thank you.";
+
+            out.println("<script>");
+
+            out.println(
+                "emailjs.init({"
+                + "publicKey: 'dCGkD7eJKsjTOzVmt'"
+                + "});"
+            );
+
+            out.println(
+                "emailjs.send("
+                + "'service_5ae6909',"
+                + "'template_400i7hb',"
+                + "{"
+                + "to_email: '" + escapeJavaScript(email) + "',"
+                + "subject: '" + escapeJavaScript(emailSubject) + "',"
+                + "message: '" + escapeJavaScript(emailMessage) + "',"
+                + "name: '" + escapeJavaScript(name) + "'"
+                + "}"
+                + ").then("
+                + "function(response) {"
+                + "console.log('Registration email sent successfully');"
+                + "},"
+                + "function(error) {"
+                + "console.log('Registration email failed:', error);"
+                + "}"
+                + ");"
+            );
+
+            out.println("</script>");
+
+
+            out.println("<br>");
+
+            out.println(
+                "<a href='login.html'>Go to Login</a>"
+            );
 
             out.println("</body>");
             out.println("</html>");
 
-            // ------------------------------------------------
-            // SEND EMAIL IN BACKGROUND
-            // ------------------------------------------------
-
-            final String registeredEmail = email;
-            final String registeredName = name;
-
-            new Thread(new Runnable() {
-
-                public void run() {
-
-                    try {
-
-                        String subject =
-                            "Student Matcher Registration Successful";
-
-                        String message =
-                            "Hello "
-                            + registeredName
-                            + ",\n\n"
-                            + "Your Student Matcher account has been "
-                            + "created successfully.\n\n"
-                            + "You can now login and use Student Matcher.\n\n"
-                            + "Thank you.";
-
-                        EmailService.sendEmail(
-                            registeredEmail,
-                            subject,
-                            message
-                        );
-
-                        System.out.println(
-                            "Registration email sent to "
-                            + registeredEmail
-                        );
-
-                    } catch (Exception emailError) {
-
-                        System.out.println(
-                            "Registration email failed: "
-                            + emailError.getMessage()
-                        );
-                    }
-                }
-
-            }).start();
 
         } catch (Exception e) {
 
@@ -137,14 +154,56 @@ public class RegistrationServlet extends HttpServlet {
 
             out.println("<h2>Registration Failed</h2>");
 
-            out.println("<p>Error: "
-                    + e.getMessage()
-                    + "</p>");
+            out.println(
+                "<p>Error: "
+                + escapeHtml(e.getMessage())
+                + "</p>"
+            );
 
-            out.println("<a href='registration.html'>Try Again</a>");
+            out.println(
+                "<a href='front.html'>Try Again</a>"
+            );
 
             out.println("</body>");
             out.println("</html>");
         }
+    }
+
+
+    // ==========================================
+    // ESCAPE JAVASCRIPT
+    // ==========================================
+
+    private String escapeJavaScript(String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\"", "\\\"")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n");
+    }
+
+
+    // ==========================================
+    // ESCAPE HTML
+    // ==========================================
+
+    private String escapeHtml(String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;");
     }
 }
